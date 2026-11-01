@@ -9,11 +9,14 @@ import io
 import sys
 from datetime import datetime
 
+import ui_location
+import geo_utils as geo
 import cv2
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import severity_utils
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -541,6 +544,15 @@ def load_model():
     model = attempt_load(WEIGHTS, map_location=device).eval()
     return model, device
 
+@st.cache_resource
+def get_wards():
+    return geo.load_wards()
+
+@st.cache_data(show_spinner=False)
+def cached_geocode(lat, lon):
+    return geo.reverse_geocode(lat, lon)
+
+
 
 # ── Detection Pipeline ────────────────────────────────────────────────────────
 def detect_damage(image_rgb, model, device, imgsz, conf_thresh, iou_thresh):
@@ -709,10 +721,22 @@ with st.spinner("Analyzing pavement surface with YOLOv7..."):
 
 annotated_pil = Image.fromarray(annotated_np)
 counts = df["Class"].value_counts().to_dict() if not df.empty else {}
-sev_score = calculate_severity_score(df)
+sev_score = severity_utils.severity_score(df, img_w, img_h)
+coverage_pct = severity_utils.coverage_pct(df, img_w, img_h)
 sev_label, sev_bg, sev_col = get_severity_badge(sev_score)
 total_repair = calculate_repair_cost(df)
 coverage_pct = calculate_area_coverage(df, img_w, img_h)
+coords = geo.extract_gps(uploaded.getvalue())
+if coords is None:
+    st.warning("No GPS tag in this photo. Enter the location manually.")
+    c1, c2 = st.columns(2)
+    lat = c1.number_input("Latitude", value=19.0760, format="%.6f")
+    lon = c2.number_input("Longitude", value=72.8777, format="%.6f")
+else:
+    lat, lon = coords
+ward = geo.find_ward(lat, lon, get_wards())
+addr = cached_geocode(round(lat, 5), round(lon, 5))
+contact = geo.ward_contact(ward)
 timestamp_str = datetime.now().strftime("%d %b %Y, %H:%M")
 
 
@@ -971,7 +995,7 @@ with st.expander("📖 How are the Estimated Cost, Severity Score, and Coverage 
     ---
 
     ### 2. Road Severity Index (0–100 Score)
-    The severity score reflects both the **urgency of the damage type** and the **AI model's detection confidence**:
+    The severity is scored from how much of the frame each damage type covers, weighted by structural impact, plus a fixed amount per confident pothole; boxes under a confidence cutoff are ignored.
     
     $$\\text{Road Severity Index} = \\left( \\frac{\\sum_{j=1}^{N} (\\text{Weight}_j \\times \\text{Confidence}_j)}{N \\times \\text{Max Weight (4)}} \\right) \\times 100$$
     
@@ -998,6 +1022,8 @@ with st.expander("📖 How are the Estimated Cost, Severity Score, and Coverage 
 # ══════════════════════════════════════════════════════════════════════════════
 #  EXPORT SECTION (ADDITIONAL FORMATS)
 # ══════════════════════════════════════════════════════════════════════════════
+ui_location.render_location_panel(lat, lon, ward, addr, contact)
+
 st.markdown('<div class="section-header"><div class="dot"></div>Additional Engineering Exports</div>', unsafe_allow_html=True)
 exp_col1, exp_col2 = st.columns(2, gap="medium")
 

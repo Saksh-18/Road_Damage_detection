@@ -1,0 +1,26 @@
+{
+ "19.0760,72.8777": {
+  "road": "Shahid Major Kaustubh Rane flyover",
+  "locality": "Hallow Pul",
+  "suburb": "Kurla West",
+  "city": "Mumbai",
+  "postcode": "400070",
+  "display": "Shahid Major Kaustubh Rane flyover, Hallow Pul, Kurla West, L Ward, Mumbai Zone 5, Mumbai, Mumbai Suburban District, Maharashtra, 400070, India"
+ },
+ "19.0669,72.8777": {
+  "road": "A H Wadia Marg",
+  "locality": "Buddha Colony",
+  "suburb": "Kurla West",
+  "city": "Mumbai",
+  "postcode": "400024",
+  "display": "A H Wadia Marg, Buddha Colony, Kurla West, L Ward, Mumbai Zone 5, Mumbai, Mumbai Suburban District, Maharashtra, 400024, India"
+ },
+ "19.0669,72.8261": {
+  "road": null,
+  "locality": "Pali Hill",
+  "suburb": "Khar",
+  "city": "Mumbai",
+  "postcode": "400052",
+  "display": "Pali Hill, Khar, Bandra West, Mumbai Zone 3, Mumbai, Mumbai Suburban District, Maharashtra, 400052, India"
+ }
+}
